@@ -26,6 +26,8 @@ def read_HandHygieneAudit(directory):
             file_path = os.path.join(directory, file)
             df = pd.read_excel(file_path)
 
+            df = df[df['Status'] == 'Closed']
+
             df_array.append(df)
 
         df_HH = pd.concat(df_array)
@@ -115,6 +117,30 @@ def loadAll(directories):
     print(f"Sum lenght: {sum(dataLength_array)}, Final size: {len(df)}, diff: {len(df) - sum(dataLength_array)}")
 
     return df
+
+# Function to create table for external audit
+def externalAuditTable(df):
+    df['Done'] = 'Yes'
+
+    df['Quarter'] = df['Quarter'].astype(str)
+    df = df[df['Quarter'].str.contains('2024')]
+
+    df = df[df['Category'] == 'External Audit']
+
+    #Pivot the table
+    results = (
+        df.pivot_table(
+            index=["Region", "Clinic"],  # Rows: Clinics
+            columns=["TypeOfAssessment", "Quarter"],  # Columns: Type of Assessment and Quarter
+            values="Done",  # Values: "Yes"/"No" indicator
+            aggfunc=lambda x: "Yes" if len(x) > 0 else "No"  # Aggregate to check for presence
+        )
+        .fillna("No")  # Fill missing values with "No"
+    )
+
+    results = results.reset_index()
+
+    return results
 
 
 
